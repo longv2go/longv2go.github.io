@@ -11,3 +11,4 @@ github_username: longv2go
 
 # Build settings
 markdown: kramdown
+# highlighter: pygments
