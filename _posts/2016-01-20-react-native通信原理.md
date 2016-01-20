@@ -102,3 +102,9 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 
 ####回调
 在JS调用的OC方法中带有回调的时候，JS端把这个回调放在了_callbacks数组中，然后把对应的index作为callbackID传给OC，这样当oc执行完方法，执行回调的时候再把这个callbackID传递回来，JS端在根据callbackID找到回调的fucntion，再执行。
+
+
+
+
+#最后
+react native的bridge模块不能运行在webview上，我把bridge模块抽离出来一个独立库，可以运行在webview上，详见[RJSBridge](https://github.com/longv2go/RJSBridge)
