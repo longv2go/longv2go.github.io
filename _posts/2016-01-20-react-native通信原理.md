@@ -32,7 +32,7 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 这个宏定义是把要暴漏的class在load方法中注册到一个全局的数组中.
 
 初始化流程如下图：
-<img width="600" src="https://github.com/longv2go/longv2go.github.io/blob/master/postImages/react_native_oc.png"></png><br/>
+<img width="600" src="https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react_native_oc.png"></png><br/>
 
 ######loadSource
 在xcode编译的时候执行一个脚本把所有的JS文件都合并成一个大的文件bundle.js，在上图中的-loadSource就是去读入这个统一的文件。
@@ -60,7 +60,7 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 
 在react命令生成的react native工程的node_modules目录下面存放着所有JS的模块。其中MessageQueue.js, BatchedBridge.js和NativeModules.js三个文件是关于JS bridge的。
 流程图如下:
-<img width="650" src="https://github.com/longv2go/longv2go.github.io/blob/master/postImages/react_native_js.jpg"></img><br/>
+<img width="650" src="https://github.com/longv2go/longv2go.github.io/raw/master/postImages/react_native_js.jpg"></img><br/>
 在遍历RemoteModules的时候需要为每一个映射对象生成OC暴漏的方法，因为JS是不支持类似OC的消息转发，如果调用了没有实现的方法，那么就直接生成一个错误，所以要知道每一个暴漏的Module要暴漏的方法，在JS端预先生成对应的实现。在OC端初始化的时候注入过一个方法nativeRequireModuleConfig，就是用来获取所有的暴漏方法名字的，返回值如下格式：
 
 ```
@@ -98,7 +98,7 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 基于以上的分析我们知道当调用一个native方法的时候会首先走到__nativeCall，
 把所有的调用参数都放入到_queue数组中，然后调用nativeFlushQueueImmediate通知OC端有新的调用，OC就会去取得所有的_queue中的数据进行处理最终调用到本地的方法。 具体流程图如下：
 
-<img width="800" src="https://github.com/longv2go/longv2go.github.io/blob/master/postImages/react_native_call.jpg"></img><br/>
+<img width="800" src="https://github.com/longv2go/longv2go.github.io/raw/master/postImages/react_native_call.jpg"></img><br/>
 
 ######回调
 在JS调用的OC方法中带有回调的时候，JS端把这个回调放在了_callbacks数组中，然后把对应的index作为callbackID传给OC，这样当oc执行完方法，执行回调的时候再把这个callbackID传递回来，JS端在根据callbackID找到回调的fucntion，再执行。
