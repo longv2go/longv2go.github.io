@@ -20,7 +20,7 @@ React-native 是Facebook开源的一个用JavaScript开发原生应用的一个�
 #初始化
 当创建一个RCTBridge对象的时候会进入初始化流程，主要分为俩部分，一个是OC端的初始化，一个JS端的初始化
 ###OC端Bridge初始化
-我们先来看一下RCT_EXPORT_MODULE宏定义
+我们先来看一下```RCT_EXPORT_MODULE```宏定义
 
 ```
 #define RCT_EXPORT_MODULE(js_name) \
