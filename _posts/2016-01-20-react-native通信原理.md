@@ -37,7 +37,7 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 在xcode编译的时候执行一个脚本把所有的JS文件都合并成一个大的文件bundle.js，在上图中的-loadSource就是去读入这个统一的文件。
 
 ####initModules
-对所有通过RCT_EXPORT_MODULE暴漏的OC模块进行处理，生成对应的RCTModuleData，并且生成_moduleDataByName字典用来保持所有的ModuleData。RCTModuleData主要用来表示每一个要暴漏的本地Module，实时生成config传给JS端，JS更具config json来生成对应的对象。那么config具体是什么格式呢，稍后在说。
+对所有通过```RCT_EXPORT_MODULE```暴漏的OC模块进行处理，生成对应的RCTModuleData，并且生成_moduleDataByName字典用来保持所有的ModuleData。RCTModuleData主要用来表示每一个要暴漏的本地Module，实时生成config传给JS端，JS更具config json来生成对应的对象。那么config具体是什么格式呢，稍后在说。
 
 ####setUpExecutor
 初始化 _javaScriptExecutor，在JSContext中注入俩个关键的方法，nativeRequireModuleConfig，nativeFlushQueueImmediate，这俩个方法会在JS端调用到
