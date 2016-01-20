@@ -33,13 +33,13 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 
 初始化流程如下图：
 ![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react_native_oc.png)
-######loadSource
+####loadSource
 在xcode编译的时候执行一个脚本把所有的JS文件都合并成一个大的文件bundle.js，在上图中的-loadSource就是去读入这个统一的文件。
 
-######initModules
+####initModules
 对所有通过RCT_EXPORT_MODULE暴漏的OC模块进行处理，生成对应的RCTModuleData，并且生成_moduleDataByName字典用来保持所有的ModuleData。RCTModuleData主要用来表示每一个要暴漏的本地Module，实时生成config传给JS端，JS更具config json来生成对应的对象。那么config具体是什么格式呢，稍后在说。
 
-######setUpExecutor
+####setUpExecutor
 初始化 _javaScriptExecutor，在JSContext中注入俩个关键的方法，nativeRequireModuleConfig，nativeFlushQueueImmediate，这俩个方法会在JS端调用到
 
 1. nativeRequireModuleConfig
@@ -48,11 +48,11 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 	
 2. nativeFlushQueueImmediate，这个方法在JS调用OC的时候会用到。
 
-######moduleConfig
+####moduleConfig
 生成一个包括所有要暴漏的Modules列表，并注入到JSContext中的__fbBatchedBridgeConfig变量中，这样JS中就可以知道有多少Module要暴漏了。config的内容如下
 ```{"remoteModuleConfig":[["ViewController"],["ExportModule"]]}```
 
-######executeSourceCode
+####executeSourceCode
 这一步就是要在JSContext中执行在第一部中生成的同一个的JS脚本bundle.js，至此就进入了JS端的初始化
 
 ###JS端Bridge初始化
@@ -100,5 +100,5 @@ RCT_EXTERN void RCTRegisterModule(Class); \
 
 ![](https://github.com/longv2go/longv2go.github.io/raw/master/postImages/react_native_call.jpg)
 
-######回调
+####回调
 在JS调用的OC方法中带有回调的时候，JS端把这个回调放在了_callbacks数组中，然后把对应的index作为callbackID传给OC，这样当oc执行完方法，执行回调的时候再把这个callbackID传递回来，JS端在根据callbackID找到回调的fucntion，再执行。
