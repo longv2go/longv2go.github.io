@@ -11,7 +11,7 @@ React-native 是Facebook开源的一个用JavaScript开发原生应用的一个�
 [参考](https://facebook.github.io/react-native/docs/native-modules-ios.html#content)
 
 
-在JS端会为每一个在OC端暴漏给JS的module生成一个对应的对象，我们称之为映射对象，对这个对象调用的方法会转发给OC端，那么我们要解决一下几个问题
+在JS端会为每一个在OC端暴漏给JS的module生成一个对应的对象，我们称之为映射对象，对这个对象调用的方法会转发给OC端，那么我们要解决以下几个问题
 
 1. 是如何把OC的模块暴漏给JS
 2. JS中的映射对象是怎么生成的，里面的方法的实现又是什么
