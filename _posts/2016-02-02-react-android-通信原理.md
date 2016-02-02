@@ -26,7 +26,7 @@ registerNatives("com/facebook/react/bridge/JSCJavaScriptExecutor", {
 C++的代码在react-native/ReactAndroid/src/main/jni目录下。
 #Java端初始化
 流程图如下
-![](hhttps://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-java-init.png)
+![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-java-init.png)
 
 ####初始化主要做几件事情
 1. 创建JSCJavaScriptExecutor,这个是个C++包装类，会调用到C++的executors::createJSCExecutor()
