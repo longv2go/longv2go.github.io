@@ -72,26 +72,13 @@ Java端还会创建一个CatalystInstanceImpl对象，这个对象用来管理�
 #JS调用Java流程
 JS会在调用native方法的时候调用 ```global.nativeFlushQueueImmediate(this._queue);```（MessageQueue.js）这个方法，其中nativeFlushQueueImmediate方法会调用到C++中，是JS调用C++的桥梁
 
-在JSCExecutor.cpp中 ```installGlobalFunction(m_context, "nativeFlushQueueImmediate", nativeFlushQueueImmediate);```这段代码把本地的nativeFlushQueueImmediate c++方法映射到JS环境的nativeFlushQueueImmediate方法, nativeFlushQueueImmediate会调用```executor->flushQueueImmediate(resStr);``` 然后调用```m_flushImmediateCallback(queueJSON);```,其中m_flushImmediateCallback是在创建JSCExecutor的时候传递过来的，
+nativeFlushQueueImmediate方法是在C++中的JSCExecutor.cpp中注册的，我们先来看看JSCExecutor的创建过程，如下图
+![](http://127.0.0.1:4000/postImages/react-and-callback.png)
+
+在JSCExecutor的构造方法中调用了```installGlobalFunction(m_context, "nativeFlushQueueImmediate", nativeFlushQueueImmediate);```，这样就在JS环境中注册了nativeFlushQueueImmediate方法，当在JS中调用了nativeFlushQueueImmediate就会执行JSCExecutor的nativeFlushQueueImmediate C++方法，然后调用 ```executor->flushQueueImmediate(resStr);```,如上图所示，会回调到 OnLoad.cpp中的dispatchCallbacksToJava()方法，上图中红框中是采用了C++的闭包写法，[参考](http://blog.csdn.net/anzhsoft/article/details/17414665)
 
 
-首先来看C++ Bridge对象的创建过程
-
-```C++
-//OnLoad.cpp
-static void create(JNIEnv* env, jobject obj, jobject executor, jobject callback,
-                   jobject callbackQueueThread) {
-  auto weakCallback = createNew<WeakReference>(callback);
-  auto weakCallbackQueueThread = createNew<WeakReference>(callbackQueueThread);
-  auto bridgeCallback = [weakCallback, weakCallbackQueueThread] (std::vector<MethodCall> calls, bool isEndOfBatch) {
-    dispatchCallbacksToJava(weakCallback, weakCallbackQueueThread, std::move(calls), isEndOfBatch);
-  };
-  auto nativeExecutorFactory = extractRefPtr<JSExecutorFactory>(env, executor);
-  auto bridge = createNew<Bridge>(nativeExecutorFactory, bridgeCallback);
-  setCountableForJava(env, obj, std::move(bridge));
-}
 ```
-
-在创建Bridge对象的时候传递进去一个闭包对象bridgeCallback，这个回调到dispatchCallbacksToJava，把bridge对象和Java对象obj建立起了关联，在之后的代码中就可以通过```auto bridge = extractRefPtr<Bridge>(env, obj);```来获取刚创建的Bridge对象
-
-
+	dispatchCallbacksToJava ---> makeJavaCall() ---> env->CallVoidMethod()
+```
+最后调用到CallVoidMethod的jni方法，这样就从C++调用到了Java代码了，传入的CallVoidMethod的callback参数就是在创建ReactBrdige的时候传入的NativeModuleReactCallback的java对象对应的jni对象,而gCallbackMethod就是call方法，这样就调用到了NativeModuleReactCallback的call方法。哇哦~终于回到java了~
