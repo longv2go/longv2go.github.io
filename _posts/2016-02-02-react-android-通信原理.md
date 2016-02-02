@@ -9,10 +9,10 @@ React Native (Android)内置了一个用于解析JS脚本的框架，方便把Ja
 
 #总体框架
 当初始化阶段，Java端会把所有要暴漏的Native Modules的信息封装成Config传给JS，在JS段会更具Config生成对应Java类的镜像对象，以及暴漏的方法，在JS中调用这个镜像对象的方法就会被转发到对应的Java对象上，如下所示
-![](http://127.0.0.1:4000/postImages/react-and-arc.png)
+![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-arc.png)
 
 JS的代码总要被解析执行，那么React是在哪里执行JS的呢？React并没有通过webview去执行JS代码，具体原因不清楚，它是通过Jni调用c++代码通过Javascriptcore来执行JS的，首先来看看生成so的文件结构。
-![reactnativejni](http://127.0.0.1:4000/postImages/react-and-lib.png)
+![reactnativejni](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-lib.png)
 其中OnLoad.cpp很关键，里面通过Jni映射了本地的方法到Java中，是Java和C++之间的桥梁。在Java中主要通过ReactBridge.java来调用C++，NativeModulesReactCallback类是C++调用Java的桥梁。
 
 例如以下代码，截取自OnLoad.cpp
@@ -26,7 +26,7 @@ registerNatives("com/facebook/react/bridge/JSCJavaScriptExecutor", {
 C++的代码在react-native/ReactAndroid/src/main/jni目录下。
 #Java端初始化
 流程图如下
-![](http://127.0.0.1:4000/postImages/react-and-java-init.png)
+![](hhttps://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-java-init.png)
 
 ####初始化主要做几件事情
 1. 创建JSCJavaScriptExecutor,这个是个C++包装类，会调用到C++的executors::createJSCExecutor()
@@ -58,7 +58,7 @@ C++的代码在react-native/ReactAndroid/src/main/jni目录下。
 
 
 Java端还会创建一个CatalystInstanceImpl对象，这个对象用来管理所有的NativeModules以及与C++通信的桥梁ReactBrdige,类图结构如下:
-![React 类图](http://127.0.0.1:4000/postImages/react-and-class.jpg)
+![React 类图](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-class.jpg)
 ####几个重要的类
 1. NativeModuleRegistry, 维护一个mModuleInstances数组，这个数组的顺序很重要，因为这和在JS端维护的镜像对象的数组是一致的当JS调用Java的时候实际上传递的正是在这个数组中的索引
 2. NativeModuleReactCallBack， C++回调Java的对象，这个对象会在创建ReactBridge的时候传递给C++，当JS调用Java的方法的时候会调用这个类的方法
@@ -73,7 +73,7 @@ Java端还会创建一个CatalystInstanceImpl对象，这个对象用来管理�
 JS会在调用native方法的时候调用 ```global.nativeFlushQueueImmediate(this._queue);```（MessageQueue.js）这个方法，其中nativeFlushQueueImmediate方法会调用到C++中，是JS调用C++的桥梁
 
 nativeFlushQueueImmediate方法是在C++中的JSCExecutor.cpp中注册的，我们先来看看JSCExecutor的创建过程，如下图
-![](http://127.0.0.1:4000/postImages/react-and-callback.png)
+![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-callback.png)
 
 在JSCExecutor的构造方法中调用了```installGlobalFunction(m_context, "nativeFlushQueueImmediate", nativeFlushQueueImmediate);```，这样就在JS环境中注册了nativeFlushQueueImmediate方法，当在JS中调用了nativeFlushQueueImmediate就会执行JSCExecutor的nativeFlushQueueImmediate C++方法，然后调用 ```executor->flushQueueImmediate(resStr);```,如上图所示，会回调到 OnLoad.cpp中的dispatchCallbacksToJava()方法，上图中红框中是采用了C++的闭包写法，[参考](http://blog.csdn.net/anzhsoft/article/details/17414665)
 
@@ -81,4 +81,4 @@ nativeFlushQueueImmediate方法是在C++中的JSCExecutor.cpp中注册的，我�
 ```
 	dispatchCallbacksToJava ---> makeJavaCall() ---> env->CallVoidMethod()
 ```
-最后调用到CallVoidMethod的jni方法，这样就从C++调用到了Java代码了，传入的CallVoidMethod的callback参数就是在创建ReactBrdige的时候传入的NativeModuleReactCallback的java对象对应的jni对象,而gCallbackMethod就是call方法，这样就调用到了NativeModuleReactCallback的call方法。哇哦~终于回到java了~
+最后调用到CallVoidMethod的jni方法，这样就从C++调用到了Java代码了，传入的CallVoidMethod的callback参数就是在创建ReactBrdige的时候传入的NativeModuleReactCallback的java对象对应的jni对象,而gCallbackMethod就是call方法，这样就调用到了NativeModuleReactCallback的call方法。哇哦~终于回到java了~,Java在通过反射最后调用实际的java方法。自己看代码去吧，剩下的很简单了。
