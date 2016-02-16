@@ -3,15 +3,13 @@ layout: post
 title:  React Native Android 通信原理
 ---
 
+React Native (Android)内置了一个用于解析JavaScript(以下简称JS)脚本的框架，方便把Java类暴漏给JS调用，具体的使用方法[参见](https://facebook.github.io/react-native/docs/native-modules-android.html#content)，这篇文章就用来研究一下Java和JS的通信原理，JS是如何调用Java的。
 
-
-React Native (Android)内置了一个用于解析JS脚本的框架，方便把Java类暴漏给JS调用，具体的使用方法[参见](https://facebook.github.io/react-native/docs/native-modules-android.html#content)，这篇文章就用来研究一下Java和JS的通信原理，JS是如何调用Java的。
-
-#总体框架
-当初始化阶段，Java端会把所有要暴漏的Native Modules的信息封装成Config传给JS，在JS段会更具Config生成对应Java类的镜像对象，以及暴漏的方法，在JS中调用这个镜像对象的方法就会被转发到对应的Java对象上，如下所示
+#总体结构
+当初始化阶段，Java端会把所有要暴漏的Java类的信息封装成Config传给JS，然后根据Config生成对应Java类的Javascript镜像对象，以及要暴漏的方法，在JS中调用这个镜像对象的方法就会被转发到对应的Java对象上，如下所示
 ![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-arc.png)
 
-JS的代码总要被解析执行，那么React是在哪里执行JS的呢？React并没有通过webview去执行JS代码，具体原因不清楚，它是通过Jni调用c++代码通过Javascriptcore来执行JS的，首先来看看生成so的文件结构。
+JS的代码总要被解析执行，那么React是在哪里执行JS的呢？React并没有通过webview去执行JS代码，具体原因不清楚，它是通过Jni调用c++代码通过Javascriptcore来执行JS的，首先来看看生成so依赖的的文件，代码在react-native/ReactAndroid/src/main/jni目录下。*（用NDK编译在Android上运行的c/c++代码，请自行google）*
 ![reactnativejni](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-lib.png)
 其中OnLoad.cpp很关键，里面通过Jni映射了本地的方法到Java中，是Java和C++之间的桥梁。在Java中主要通过ReactBridge.java来调用C++，NativeModulesReactCallback类是C++调用Java的桥梁。
 
@@ -23,16 +21,15 @@ registerNatives("com/facebook/react/bridge/JSCJavaScriptExecutor", {
 });
 ```
 意思是所把Java中的JSCJavaScriptExecutor类的initialize方法映射为executors::createJSCExecutor的C++方法，这样当在Java中调用initialize就会在C++中执行executors::createJSCExecutor。
-C++的代码在react-native/ReactAndroid/src/main/jni目录下。
 #Java端初始化
-流程图如下
+在第一个Activity创建的时候开始进行整个Brdige的Java端的初始化，流程图如下
 ![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-java-init.png)
 
 ####初始化主要做几件事情
 1. 创建JSCJavaScriptExecutor,这个是个C++包装类，会调用到C++的executors::createJSCExecutor()
-2. 创建NativeModuleRegistry管理所有的要暴漏给JS的Java类，暴漏给JS的java类的搜集是通过ReactActivity中的getPackages实现的，详看流程图
+2. 创建NativeModuleRegistry管理所有的要暴漏给JS的Java类，暴漏给JS的java类的搜集是通过ReactActivity中的getPackages实现的，详看上图
 3. 创建ReactBridge对象，这个对象也是个C++桥梁对象，用来调用C++代码，创建过程会调用到bridge::create()方法
-4. 创建config(包含了要暴漏的所有java类的信息，json格式)，并通过bridge设置到JS环境中的__fbBatchedBridgeConfig变量，这样在JS端就可以通过这个变量来获取所有的Java类信息了
+4. 创建config(包含了要暴漏的所有java类的信息，json格式)，并通过bridge设置到JS环境中的__fbBatchedBridgeConfig变量，这样在JS端就可以通过这个变量来获取所有的Java类信息了，然后根据config生产对应的镜像对象。
 
 	config格式如下：
 	
@@ -67,10 +64,35 @@ Java端还会创建一个CatalystInstanceImpl对象，这个对象用来管理�
 最后catalystInstance.runJSBundle()开启JS端的初始化流程
 
 #JS端的初始化
-和React Native iOS的JS初始化是一样的，因为Android和iOS的react是同享一份JS代码的，参见[react-native 通信原理](https://longv2go.github.io/2016/01/20/react-native%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86.html)
+和React Native iOS的JS初始化是一样的，因为Android和iOS的react是同享一份JS代码的，在react命令生成的react native工程的node_modules目录下面存放着所有JS的模块。其中MessageQueue.js, BatchedBridge.js和NativeModules.js三个文件是关于JS bridge的。初始化流程如下图![react-native 通信原理](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react_native_js.jpg)
+
+在遍历RemoteModules的时候需要为每一个映射对象生成Java暴漏的方法，因为JS是不支持消息转发，如果调用了没有实现的方法，那么就直接生成一个错误，所以要知道每一个暴漏的Module要暴漏的方法，在JS端预先生成对应的实现。在Java端初始化的时候已经在JS中注入了config信息，包括了要暴漏的类和方法名，足已生成镜像对象了。MessageQueue.js中的_genMethod方法中为每一个映射对象生成相应的方法实现。最后生成方法如下：
+
+```
+> NativeModules.ExportModule.hello
+< function () {
+          for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+            args[_key2] = arguments[_key2];
+          }
+
+          var lastArg = args.length > 0 ? args[args.length - 1] : null;
+          var secondLastArg = args.length > 1 ? args[args.length - 2] : null;
+          var hasSuccCB = typeof lastArg === 'function';
+          var hasErrorCB = typeof secondLastArg === 'function';
+          hasErrorCB && invariant(hasSuccCB, 'Cannot have a non-function arg after a function arg.');
+          var numCBs = hasSuccCB + hasErrorCB;
+          var onSucc = hasSuccCB ? lastArg : null;
+          var onFail = hasErrorCB ? secondLastArg : null;
+          args = args.slice(0, args.length - numCBs);
+          return self.__nativeCall(module, method, args, onFail, onSucc);
+        }
+```
+
+当调用一个镜像对象的方法，就会调用到_nativeCall方法，而参数就是闭包生成的时候捕获的module和method等, 在Java端和JS端会保存一份关于暴漏的Java类对象信息的数组，这俩分数组的顺序是相同的，而 _nativeCall中的参数就是要调用的Java类在数组中的索引，这样在Java端就可以通过索引找到要调用的Java类了。在JS端这个数组是MessageQueue的modulesConfig,Java端是NativeModuleRegistry的mModuleInstances。
+
 
 #JS调用Java流程
-JS会在调用native方法的时候调用 ```global.nativeFlushQueueImmediate(this._queue);```（MessageQueue.js）这个方法，其中nativeFlushQueueImmediate方法会调用到C++中，是JS调用C++的桥梁
+JS会在调用native方法的时候调用 ```_nativeCall```然后调用```global.nativeFlushQueueImmediate(this._queue);```,其中nativeFlushQueueImmediate方法会调用到C++中，是JS调用C++的桥梁
 
 nativeFlushQueueImmediate方法是在C++中的JSCExecutor.cpp中注册的，我们先来看看JSCExecutor的创建过程，如下图
 ![](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-callback.png)
