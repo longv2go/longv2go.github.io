@@ -64,7 +64,7 @@ Java端还会创建一个CatalystInstanceImpl对象，这个对象用来管理�
 最后catalystInstance.runJSBundle()开启JS端的初始化流程
 
 #JS端的初始化
-和React Native iOS的JS初始化是一样的，因为Android和iOS的react是同享一份JS代码的，在react命令生成的react native工程的node_modules目录下面存放着所有JS的模块。在编译的时候会把所有的JS模块合并成一个大的JS文件。初始化就是在JS环境中执行这个文件。其中MessageQueue.js, BatchedBridge.js和NativeModules.js三个文件是关于JS bridge的。初始化流程如下图![react-native 通信原理](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react_native_js.jpg)
+和React Native iOS的JS初始化是一样的，因为Android和iOS的react是同享一份JS代码的，在react命令生成的react native工程的node_modules目录下面存放着所有JS的模块。在编译的时候会把所有的JS模块合并成一个大的JS文件。初始化就是在JS环境中执行这个文件。其中MessageQueue.js, BatchedBridge.js和NativeModules.js三个文件是关于JS bridge的。初始化流程如下图![react-native 通信原理](https://raw.githubusercontent.com/longv2go/longv2go.github.io/master/postImages/react-and-js.jpg)
 
 在遍历RemoteModules的时候需要为每一个映射对象生成Java暴漏的方法，因为JS是不支持消息转发，如果调用了没有实现的方法，那么就直接生成一个错误，所以要知道每一个暴漏的Module要暴漏的方法，在JS端预先生成对应的实现。在Java端初始化的时候已经在JS中注入了config信息，包括了要暴漏的类和方法名，足已生成镜像对象了。MessageQueue.js中的_genMethod方法中为每一个映射对象生成相应的方法实现。最后生成方法如下：
 
