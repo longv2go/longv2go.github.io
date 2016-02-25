@@ -106,4 +106,4 @@ nativeFlushQueueImmediate方法是在C++中的JSCExecutor.cpp中注册的，我�
 最后调用到CallVoidMethod的jni方法，这样就从C++调用到了Java代码了，传入的CallVoidMethod的callback参数就是在创建ReactBrdige的时候传入的NativeModuleReactCallback的java对象对应的jni对象,而gCallbackMethod就是call方法，这样就调用到了Java类NativeModuleReactCallback的call方法。哇哦~终于回到java了~,Java在通过反射最后调用实际的java方法。
 
 #总结
-本文只是列出了整个Bridge比较难于理解的部分以及流程，想要详细了解具体原理还需要自己看代码，如果遇到代码中不明白的地方可以参考本文。关于React Native iOS的Objective-C和JS的通信原理请[参考](http://127.0.0.1:4000/2016/01/20/react-native%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86.html). *转载请标明出处*
+本文只是列出了整个Bridge比较难于理解的部分以及流程，想要详细了解具体原理还需要自己看代码，如果遇到代码中不明白的地方可以参考本文。关于React Native iOS的Objective-C和JS的通信原理请[参考](https://longv2go.github.io/2016/01/20/react-native%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86.html). *转载请标明出处*
